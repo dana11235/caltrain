@@ -1,16 +1,23 @@
 chrome.runtime.onStartup.addListener(function(){
   CaltrainCountdown.setupExtension();
 });
+
 chrome.runtime.onInstalled.addListener(function(){
   CaltrainCountdown.loadDatabase();
   CaltrainCountdown.setupExtension();
 });
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
-//if (alarm.name == chrome.runtime.getManifest().name) {
-//    BitTicker.getCurrentExchangeRate();
-//  }
+  CaltrainCountdown.openDb(function(db) {
+    CaltrainCountdown.getNextCaltrainTime(db);
+  });
 });
+
+var calculateDifference = function(current, next) {
+  hoursDifference = Math.trunc(next / 100) - Math.trunc(current / 100);
+  minutesDifference = next % 100 - current % 100;
+  return 60 * hoursDifference + minutesDifference;
+}
 
 var CaltrainCountdown = {
   openDb: function(callback) {
@@ -136,7 +143,7 @@ var CaltrainCountdown = {
     };
   },
 
-  getNextCaltrainTime: function(db, station, direction) {
+  getNextCaltrainTime: function(db) {
     var date = new Date();
     var minutes = date.getMinutes();
     // Pad minutes less than 10
@@ -153,18 +160,43 @@ var CaltrainCountdown = {
       dayStr = "Saturday";
     }
 
-    var trans = db.transaction(["stop_times"]);
-    var store = trans.objectStore("stop_times");
-    var index = store.index('day_stop_id_index');
+    chrome.storage.local.get('direction', function(response) {
+      var direction = response.direction || "SB";
+      var directionText = direction == "NB" ? "N" : "S";
 
-    var lowerBound = [dayStr, parseInt(station), hhmm];
-    var upperBound = [dayStr, parseInt(station), 2359];
-    var range = IDBKeyRange.bound(lowerBound,upperBound);
-    var request = index.get(range);
-    request.onsuccess = function(e) {
-      timeToNext = e.target.result.departure_time - hhmm;
-      CaltrainCountdown.setBadge(timeToNext + direction);
-    }
+      chrome.storage.local.get(direction, function(response) {
+        var station = response[direction];
+        // This is a hack. Should be pulled dynamically
+        if (!station) {
+          if (direction == "NB") {
+            station = 70011;
+          } else {
+            station = 70012;
+          }
+        }
+
+        var trans = db.transaction(["stop_times"]);
+        var store = trans.objectStore("stop_times");
+        var index = store.index('day_stop_id_index');
+
+        var lowerBound = [dayStr, parseInt(station), hhmm];
+        var upperBound = [dayStr, parseInt(station), 2359];
+        var range = IDBKeyRange.bound(lowerBound,upperBound);
+        var request = index.get(range);
+        request.onsuccess = function(e) {
+          var timeToNext = "-";
+          if (e.target.result) {
+            console.log(e.target.result);
+            timeToNext = calculateDifference(hhmm, e.target.result.departure_time);
+            // Notifications for > 120 minutes are probably for tomorrow
+            if (timeToNext > 120) {
+              timeToNext = "-";
+            }
+          }
+          CaltrainCountdown.setBadge(timeToNext + directionText);
+        }
+      })
+    })
   },
 
   setBadge: function(text) {
