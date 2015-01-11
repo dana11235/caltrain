@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <script src="jquery-1.11.0.min.js"></script>
+    <script src="popup.js"></script>
+    <script src="caltrainNotifier.js"></script>
+    <style>
+      a {
+        text-decoration: none;
+        color: black;
+      }
+      .popup div {
+        width: 250px;
+        text-align: right;
+        font-family: 'Arial';
+        font-size: 14px;
+        margin-bottom: 5px;
+        clear: both;
+        height: 23px;
+      }
+      select {
+        float: left;
+      }
+      label {
+        width: 60px;
+        float: left;
+        text-align: left;
+        font-weight: bold;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body class="popup">
+    <div>
+      <label for="direction">Direction</label>
+      <select id="direction">
+        <option value="NB">Northbound</option>
+        <option value="SB">Southbound</option>
+      </select>
+    </div>
+    <div>
+      <label for="stations">Station</label>
+      <select id="stations">
+      </select>
+    </div>
+  </body>
+</html>
