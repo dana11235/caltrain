@@ -83,10 +83,10 @@ var CaltrainCountdown = {
         var request = store.put({
           "caltrain_id": parseInt(fields[0]),
           "name": fields[2].replace(/"/g,''),
-          "lat": parseFloat(fields[4]),
-          "lon": parseFloat(fields[5]),
-          "zone": parseInt(fields[6]),
-          "platform_code": fields[10]
+          "lat": parseFloat(fields[3]),
+          "lon": parseFloat(fields[4]),
+          "zone": parseInt(fields[5]),
+          "platform_code": fields[9]
         });
       }
     });
@@ -109,7 +109,7 @@ var CaltrainCountdown = {
         departure_time = parseInt("" + time_parts[1] + time_parts[2]);
         var request = store.put({
           "trip_id": fields[0],
-          "day": fields[0].match(/Saturday|Sunday|Weekday|PresDay/)[0],
+          "day": /a$/.test(fields[0]) ? 'Saturday' : (/u$/.test(fields[0]) ? 'Sunday' : 'Weekday'),
           "departure_time": departure_time,
           "stop_id": parseInt(fields[3])
         });
